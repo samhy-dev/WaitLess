@@ -1,6 +1,7 @@
 import base44 from "@base44/vite-plugin"
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
+import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -15,5 +16,30 @@ export default defineConfig({
       visualEditAgent: true
     }),
     react(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['WAITLESS.png'],
+      manifest: {
+        name: 'WaitLess',
+        short_name: 'WaitLess',
+        description: 'Queue management made simple',
+        theme_color: '#0f172a',
+        background_color: '#ffffff',
+        display: 'standalone',
+        start_url: '/',
+        icons: [
+          {
+            src: '/WAITLESS.png',
+            sizes: '192x192',
+            type: 'image/png'
+          },
+          {
+            src: '/WAITLESS.png',
+            sizes: '512x512',
+            type: 'image/png'
+          }
+        ]
+      }
+    })
   ]
 });

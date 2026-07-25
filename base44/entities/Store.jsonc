@@ -1,0 +1,31 @@
+{
+  "name": "Store",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Store Name",
+      "description": "Display name shown on the admin dashboard and customer page",
+      "default": "My Store"
+    },
+    "voice_uri": {
+      "type": "string",
+      "title": "Announcement Voice URI",
+      "description": "The speechSynthesis voice URI to use for the 'your turn' announcement (empty = the device's default voice)",
+      "default": ""
+    },
+    "voice_rate": {
+      "type": "number",
+      "title": "Announcement Speed",
+      "description": "Speech rate for the 'your turn' announcement (0.5 slow - 1.5 fast)",
+      "default": 0.95
+    },
+    "voice_pitch": {
+      "type": "number",
+      "title": "Announcement Pitch",
+      "description": "Speech pitch for the 'your turn' announcement (0 low - 2 high)",
+      "default": 1
+    }
+  },
+  "required": []
+}

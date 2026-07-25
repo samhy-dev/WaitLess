@@ -1,0 +1,45 @@
+{
+  "name": "Ticket",
+  "type": "object",
+  "properties": {
+    "store_id": {
+      "type": "string",
+      "title": "Store ID",
+      "description": "The store this queue ticket belongs to"
+    },
+    "ticket_number": {
+      "type": "integer",
+      "title": "Ticket Number",
+      "description": "Sequential per-store queue number, starting at 1"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "waiting",
+        "called",
+        "done"
+      ],
+      "default": "waiting",
+      "title": "Status",
+      "description": "waiting = in line; called = it's their turn; done = served"
+    },
+    "call_count": {
+      "type": "integer",
+      "title": "Call Count",
+      "description": "How many times this ticket's number has been called (drives repeat-call alerts)",
+      "default": 0
+    },
+    "rating": {
+      "type": "integer",
+      "title": "Rating",
+      "description": "Customer satisfaction rating 1-5 stars given after being served",
+      "minimum": 1,
+      "maximum": 5
+    }
+  },
+  "required": [
+    "store_id",
+    "ticket_number",
+    "status"
+  ]
+}

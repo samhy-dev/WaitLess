@@ -94,6 +94,18 @@ export default function JoinQueue() {
       });
   }, [storeId]);
 
+  // I-record ang QR scan (isang beses kada pagbukas ng page)
+  useEffect(() => {
+    if (!storeId) return;
+    supabase
+      .from("analytics_events")
+      .insert({ event_type: "qr_scan", store_id: storeId })
+      .then(() => {})
+      .catch(() => {
+        // huwag hayaang makaapekto sa main flow kung mag-fail ang tracking
+      });
+  }, [storeId]);
+
   useEffect(() => {
     const unlock = () => {
       unlockAudio();

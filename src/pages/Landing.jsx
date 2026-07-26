@@ -82,6 +82,11 @@ export default function Landing() {
     function handleAppInstalled() {
       setInstalled(true);
       setInstallPrompt(null);
+      supabase
+        .from("analytics_events")
+        .insert({ event_type: "pwa_install" })
+        .then(() => {})
+        .catch(() => {});
     }
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
@@ -259,6 +264,19 @@ export default function Landing() {
           )}
           </div>
         </section>
+
+        <footer className="mt-12 border-t border-slate-200 pt-6 text-center text-xs text-slate-400">
+          <div className="flex justify-center gap-4">
+            <Link to="/privacy-policy" className="hover:text-slate-600 hover:underline">
+              Privacy Policy
+            </Link>
+            <span>·</span>
+            <Link to="/terms-of-service" className="hover:text-slate-600 hover:underline">
+              Terms of Service
+            </Link>
+          </div>
+          <p className="mt-2">© 2026 WaitLess. All rights reserved.</p>
+        </footer>
       </main>
     </div>;
 

@@ -12,6 +12,8 @@ import LogIn from './pages/LogIn';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
 import AdminDashboard from './pages/AdminDashboard';
 import JoinQueue from './pages/JoinQueue';
 import SetupStore from './pages/SetupStore';
@@ -51,6 +53,8 @@ const AuthenticatedApp = () => {
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+      <Route path="/terms-of-service" element={<TermsOfService />} />
       <Route path="/setup-store" element={<SetupStore />} />
       <Route path="/manage/:storeId" element={<AdminDashboard />} />
       <Route path="/settings/:storeId" element={<StoreSettings />} />

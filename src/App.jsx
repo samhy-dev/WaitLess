@@ -8,7 +8,7 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
 // Add page imports here
 import Landing from './pages/Landing';
-import Login from './pages/Login';
+import Login from './pages/LogIn';
 import Register from './pages/Register';
 import AdminDashboard from './pages/AdminDashboard';
 import JoinQueue from './pages/JoinQueue';

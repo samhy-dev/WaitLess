@@ -5,7 +5,7 @@ import { Loader2, QrCode, Download, Lock } from "lucide-react";
 import Logo from "@/components/Logo";
 
 // Palitan mo ito ng sarili mong email
-const ADMIN_EMAIL = "waitlessqueque@gmail.com";
+const ADMIN_EMAIL = "waitlessqueue@gmail.com";
 
 export default function AdminStats() {
   const navigate = useNavigate();

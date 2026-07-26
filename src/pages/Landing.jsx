@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,10 @@ import {
   Store,
   QrCode,
   BellRing,
-  Loader2 } from
+  Loader2,
+  Download,
+  LogIn,
+  LogOut } from
 "lucide-react";
 
 const STEPS = [
@@ -23,38 +26,108 @@ export default function Landing() {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [myStores, setMyStores] = useState([]);
+  const [installPrompt, setInstallPrompt] = useState(null);
+  const [installed, setInstalled] = useState(false);
+  const [user, setUser] = useState(null);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [loadingStores, setLoadingStores] = useState(false);
 
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem("waitless_my_stores") || "[]");
-    if (Array.isArray(saved)) setMyStores(saved);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user || null);
+      setCheckingAuth(false);
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+
+    return () => {
+      listener?.subscription?.unsubscribe();
+    };
   }, []);
+
+  useEffect(() => {
+    if (!user) {
+      setMyStores([]);
+      return;
+    }
+    loadMyStores();
+  }, [user]);
+
+  async function loadMyStores() {
+    setLoadingStores(true);
+    try {
+      const { data, error } = await supabase
+        .from("stores")
+        .select("*")
+        .eq("owner_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setMyStores(data || []);
+    } catch (err) {
+      console.error("Failed to load stores:", err);
+      setMyStores([]);
+    } finally {
+      setLoadingStores(false);
+    }
+  }
+
+  useEffect(() => {
+    function handleBeforeInstallPrompt(e) {
+      e.preventDefault();
+      setInstallPrompt(e);
+    }
+    function handleAppInstalled() {
+      setInstalled(true);
+      setInstallPrompt(null);
+    }
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("appinstalled", handleAppInstalled);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", handleAppInstalled);
+    };
+  }, []);
+
+  async function handleInstallClick() {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === "accepted") {
+      setInstalled(true);
+    }
+    setInstallPrompt(null);
+  }
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    setUser(null);
+    setMyStores([]);
+  }
 
   async function handleCreate(e) {
     e.preventDefault();
+    if (!user) {
+      navigate("/login");
+      return;
+    }
     setLoading(true);
     try {
-      // Kunin ang kasalukuyang session, o gumawa ng anonymous session
-      // kung wala pang naka-login (guest, walang email/password)
-      let { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        const { data, error: anonError } = await supabase.auth.signInAnonymously();
-        if (anonError) throw anonError;
-        session = data.session;
-      }
-
       const storeName = name.trim() || "My Store";
       const { data: store, error: insertError } = await supabase
         .from("stores")
-        .insert({ name: storeName, owner_id: session.user.id })
+        .insert({ name: storeName, owner_id: user.id })
         .select()
         .single();
 
       if (insertError) throw insertError;
 
-      const entry = { store_id: store.id, name: store.name };
-      const updated = [entry, ...myStores.filter((s) => s.store_id !== store.id)];
-      setMyStores(updated);
-      localStorage.setItem("waitless_my_stores", JSON.stringify(updated));
+      setName("");
+      await loadMyStores();
       navigate(`/manage/${store.id}`);
     } catch (err) {
       console.error("Failed to create store:", err);
@@ -69,6 +142,32 @@ export default function Landing() {
           <Logo className="h-8 w-8 rounded-lg" />
           <span className="tracking-tight font-bold [font-family:'Rubik_Mono_One',_system-ui] text-xl">Waitless</span>
         </div>
+        <div className="flex items-center gap-2">
+          {installPrompt && !installed && (
+            <Button
+              onClick={handleInstallClick}
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+            >
+              <Download className="h-4 w-4" />
+              Install App
+            </Button>
+          )}
+          {!checkingAuth && (
+            user ? (
+              <Button onClick={handleLogout} variant="ghost" size="sm" className="gap-1.5">
+                <LogOut className="h-4 w-4" />
+                Log out
+              </Button>
+            ) : (
+              <Button onClick={() => navigate("/login")} variant="outline" size="sm" className="gap-1.5">
+                <LogIn className="h-4 w-4" />
+                Sign in
+              </Button>
+            )
+          )}
+        </div>
       </header>
 
       <main className="mx-auto max-w-3xl px-4 pb-16">
@@ -78,26 +177,51 @@ export default function Landing() {
         </section>
 
         <section className="mx-auto mt-8 max-w-md">
-          <form onSubmit={handleCreate} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            
-            <label htmlFor="storeName" className="text-sm font-medium text-slate-700">
-              Store name <span className="font-normal text-slate-400">(optional)</span>
-            </label>
-            <Input id="storeName" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Mike's Barber Shop" className="mt-2" />
-            
-            <Button type="submit" disabled={loading} className="mt-3 w-full">
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Store className="h-4 w-4" />}
-              {loading ? "Creating…" : "Create New Store"}
-            </Button>
-          </form>
+          {checkingAuth ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
+            </div>
+          ) : !user ? (
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
+              <Store className="mx-auto h-8 w-8 text-slate-300" />
+              <h2 className="mt-3 font-semibold text-slate-800">Sign in to create a store</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Your stores stay linked to your account — access them from any device.
+              </p>
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                <Button onClick={() => navigate("/login")} className="flex-1">
+                  Sign In
+                </Button>
+                <Button onClick={() => navigate("/register")} variant="outline" className="flex-1">
+                  Create Account
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleCreate} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <label htmlFor="storeName" className="text-sm font-medium text-slate-700">
+                Store name <span className="font-normal text-slate-400">(optional)</span>
+              </label>
+              <Input id="storeName" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Mike's Barber Shop" className="mt-2" />
+
+              <Button type="submit" disabled={loading} className="mt-3 w-full">
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Store className="h-4 w-4" />}
+                {loading ? "Creating…" : "Create New Store"}
+              </Button>
+            </form>
+          )}
         </section>
 
-        {myStores.length > 0 && <section className="mx-auto mt-8 max-w-md">
+        {user && (loadingStores ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
+          </div>
+        ) : myStores.length > 0 && <section className="mx-auto mt-8 max-w-md">
             <h2 className="mb-3 text-center text-sm font-semibold uppercase tracking-wide text-[hsl(var(--muted-foreground))]">YOUR STORES
 
         </h2>
             <div className="space-y-2">
-              {myStores.map((s) => <button key={s.store_id} onClick={() => navigate(`/manage/${s.store_id}`)} className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md cursor-pointer">
+              {myStores.map((s) => <button key={s.id} onClick={() => navigate(`/manage/${s.id}`)} className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md cursor-pointer">
             
                   <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-white">
                     <Store className="h-5 w-5" />
@@ -111,7 +235,7 @@ export default function Landing() {
           )}
             </div>
           </section>
-      }
+        )}
 
         <section className="mt-12">
           <h2 className="text-center text-sm font-semibold uppercase tracking-wide text-[hsl(var(--muted-foreground))]">HOW IT WORKS

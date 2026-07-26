@@ -18,7 +18,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['WAITLESS.png'],
+      includeAssets: ['WAITLESS-192.png', 'WAITLESS-512.png'],
       manifest: {
         name: 'WaitLess',
         short_name: 'WaitLess',
@@ -29,12 +29,12 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: '/WAITLESS.png',
+            src: '/WAITLESS-192.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: '/WAITLESS.png',
+            src: '/WAITLESS-512.png',
             sizes: '512x512',
             type: 'image/png'
           }

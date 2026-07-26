@@ -8,6 +8,8 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
 // Add page imports here
 import Landing from './pages/Landing';
+import Login from './pages/Login';
+import Register from './pages/Register';
 import AdminDashboard from './pages/AdminDashboard';
 import JoinQueue from './pages/JoinQueue';
 import SetupStore from './pages/SetupStore';
@@ -43,6 +45,8 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       <Route path="/" element={<Landing />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
       <Route path="/setup-store" element={<SetupStore />} />
       <Route path="/manage/:storeId" element={<AdminDashboard />} />
       <Route path="/settings/:storeId" element={<StoreSettings />} />

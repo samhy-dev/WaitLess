@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectTrigger,
@@ -12,9 +13,10 @@ import {
   SelectValue } from
 "@/components/ui/select";
 import Logo from "@/components/Logo";
-import { ArrowLeft, Volume2, RotateCcw, Loader2, Check } from "lucide-react";
+import { ArrowLeft, Volume2, RotateCcw, Loader2, Check, MessageSquare } from "lucide-react";
 import {
   DEFAULT_VOICE_PREFS,
+  DEFAULT_VOICE_MESSAGE,
   prefsFromStore,
   getAvailableVoices,
   buildAnnouncement,
@@ -24,10 +26,13 @@ import {
 export default function VoiceSettings() {
   const { storeId } = useParams();
   const [prefs, setPrefs] = useState(DEFAULT_VOICE_PREFS);
+  const [messageDraft, setMessageDraft] = useState("");
   const [voices, setVoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [savingMessage, setSavingMessage] = useState(false);
+  const [messageSaved, setMessageSaved] = useState(false);
 
   useEffect(() => {
     supabase
@@ -36,7 +41,11 @@ export default function VoiceSettings() {
       .eq("id", storeId)
       .single()
       .then(({ data: s }) => {
-        if (s) setPrefs(prefsFromStore(s));
+        if (s) {
+          const p = prefsFromStore(s);
+          setPrefs(p);
+          setMessageDraft(p.voice_message);
+        }
       })
       .finally(() => setLoading(false));
   }, [storeId]);
@@ -73,6 +82,28 @@ export default function VoiceSettings() {
     }
   }
 
+  async function handleSaveMessage() {
+    setSavingMessage(true);
+    setMessageSaved(false);
+    try {
+      await supabase
+        .from("stores")
+        .update({ voice_message: messageDraft })
+        .eq("id", storeId);
+      setPrefs((p) => ({ ...p, voice_message: messageDraft }));
+      setMessageSaved(true);
+      setTimeout(() => setMessageSaved(false), 2000);
+    } catch {
+      // ignore — the staff can retry
+    } finally {
+      setSavingMessage(false);
+    }
+  }
+
+  function handleResetMessage() {
+    setMessageDraft("");
+  }
+
   function handleVoiceChange(v) {
     persist({ ...prefs, voice_uri: v === "__default" ? "" : v });
   }
@@ -86,11 +117,11 @@ export default function VoiceSettings() {
   }
 
   function handleReset() {
-    persist({ ...DEFAULT_VOICE_PREFS });
+    persist({ ...DEFAULT_VOICE_PREFS, voice_message: prefs.voice_message });
   }
 
   function handleTest() {
-    speakWithPrefs(buildAnnouncement(42), prefs);
+    speakWithPrefs(buildAnnouncement(42, messageDraft), prefs);
   }
 
   return (
@@ -128,7 +159,8 @@ export default function VoiceSettings() {
             <Volume2 className="h-5 w-5" />
             Play sample
           </Button>
-          <p className="mt-2 text-center text-xs text-slate-400">"Hi! Ticket number 42, It's your turn now!"
+          <p className="mt-2 text-center text-xs text-slate-400">
+            "{buildAnnouncement(42, messageDraft)}"
           </p>
         </section>
 
@@ -138,6 +170,45 @@ export default function VoiceSettings() {
           </div> :
 
         <>
+            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-slate-400" />
+                <Label className="text-sm font-medium text-slate-700">Custom message</Label>
+              </div>
+              <p className="mt-1 text-xs text-slate-400">
+                Write what gets said when it's a customer's turn. Use{" "}
+                <code className="rounded bg-slate-100 px-1 py-0.5">{"{number}"}</code> where the
+                ticket number should go.
+              </p>
+              <Textarea
+                value={messageDraft}
+                onChange={(e) => setMessageDraft(e.target.value)}
+                placeholder={DEFAULT_VOICE_MESSAGE}
+                className="mt-3"
+                rows={3}
+              />
+              <div className="mt-3 flex items-center justify-between">
+                {messageSaved ?
+                <span className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-600">
+                    <Check className="h-4 w-4" /> Saved
+                  </span> :
+                savingMessage ?
+                <span className="inline-flex items-center gap-1.5 text-sm text-slate-400">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving…
+                  </span> :
+
+                <button
+                  onClick={handleResetMessage}
+                  className="text-xs text-slate-400 underline hover:text-slate-600">
+                    Use default wording
+                  </button>
+                }
+                <Button onClick={handleSaveMessage} size="sm" disabled={savingMessage}>
+                  Save message
+                </Button>
+              </div>
+            </section>
+
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <Label className="text-sm font-medium text-slate-700">Voice</Label>
               <p className="text-xs text-slate-400">

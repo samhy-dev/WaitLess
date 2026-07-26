@@ -1,10 +1,14 @@
 // Shared voice-announcement helpers used by the Voice Settings page (staff
 // configures) and the JoinQueue page (customers hear the result).
 
+export const DEFAULT_VOICE_MESSAGE =
+  "Hi! Ticket number {number}, it's your turn now. Thank you for waiting!";
+
 export const DEFAULT_VOICE_PREFS = {
   voice_uri: "", // empty = the device's default voice
   voice_rate: 0.95,
   voice_pitch: 1,
+  voice_message: "", // empty = use DEFAULT_VOICE_MESSAGE
 };
 
 // Pull the staff's saved voice preferences off a Store record, falling back to
@@ -20,6 +24,7 @@ export function prefsFromStore(store) {
       typeof store?.voice_pitch === "number"
         ? store.voice_pitch
         : DEFAULT_VOICE_PREFS.voice_pitch,
+    voice_message: store?.voice_message || DEFAULT_VOICE_PREFS.voice_message,
   };
 }
 
@@ -33,9 +38,14 @@ export function getAvailableVoices() {
   }
 }
 
-// The standard "your turn" wording for a given ticket number.
-export function buildAnnouncement(ticketNumber) {
-  return `Hi! Ticket number ${ticketNumber}, it's your turn now. Thank you for waiting!`;
+// The wording for a given ticket number. Uses the store's custom template
+// (with {number} as a placeholder) if one is set, otherwise the default.
+export function buildAnnouncement(ticketNumber, customTemplate) {
+  const template =
+    customTemplate && customTemplate.trim()
+      ? customTemplate
+      : DEFAULT_VOICE_MESSAGE;
+  return template.replace(/\{number\}/g, ticketNumber);
 }
 
 // Speak `text` using the given preferences. Silently no-ops if speech isn't

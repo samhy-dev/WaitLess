@@ -9,7 +9,7 @@ import { speakWithPrefs, buildAnnouncement, prefsFromStore } from "@/lib/voicePr
 const STORAGE_KEY = "waitless_ticket";
 
 function announceTurn(ticketNumber, prefs) {
-  speakWithPrefs(buildAnnouncement(ticketNumber), prefs);
+  speakWithPrefs(buildAnnouncement(ticketNumber, prefs?.voice_message), prefs);
 }
 
 let _audioCtx = null;

@@ -21,6 +21,7 @@ import StoreSettings from './pages/StoreSettings';
 import QueueHistory from './pages/QueueHistory';
 import Analytics from './pages/Analytics';
 import VoiceSettings from './pages/VoiceSettings';
+import AdminStats from './pages/AdminStats';  
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -62,6 +63,7 @@ const AuthenticatedApp = () => {
       <Route path="/analytics/:storeId" element={<Analytics />} />
       <Route path="/voice-settings/:storeId" element={<VoiceSettings />} />
       <Route path="/join/:storeId" element={<JoinQueue />} />
+      <Route path="/admin/stats" element={<AdminStats />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
